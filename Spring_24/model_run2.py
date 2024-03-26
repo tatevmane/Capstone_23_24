@@ -10,7 +10,7 @@ from nltk.stem import WordNetLemmatizer
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn import model_selection, svm
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 from sklearn.model_selection import GridSearchCV
 
 class Model():
@@ -30,8 +30,8 @@ class Model():
     
     def __init__(self, test_df, train_df, overwrite=True):
         """
-        Intializes INFO DataFrame. If overwrite=True, clears previous data (can start fresh with a new INFO DataFrame).
-        If overwrite=False, concats old INFO DataFrame and new INFO DataFrame.
+        Intializes class. If overwrite=True, clears previous data (can start fresh with new train/test dataframes).
+        If overwrite=False, concats old train/test dataframes and new train/test dataframes.
         """
         if overwrite==True:
             self.train_df = train_df
@@ -56,13 +56,15 @@ class Model():
         return ' '.join(lemm_words)
 
     def make_XY(self, stop_words):
-        self.train_df['clean_text'] = self.train_df.narrative.apply(lambda x: clean_narrative(x, stop_words))
-        self.test_df['clean_text'] = self.test_df.narrative.apply(lambda x: clean_narrative(x, stop_words))
+        train_df = self.train_df
+        test_df = self.test_df
+        train_df['clean_text'] = self.train_df.narrative.apply(lambda x: clean_narrative(x, stop_words))
+        test_df['clean_text'] = self.test_df.narrative.apply(lambda x: clean_narrative(x, stop_words))
 
-        self.train_X = self.train_df.clean_narrative
-        self.test_X = self.test_df.clean_narrative
-        self.train_Y = self.train_df.label
-        self.test_Y = self.test_df.label
+        self.train_X = train_df.clean_narrative
+        self.test_X = test_df.clean_narrative
+        self.train_Y = train_df.label
+        self.test_Y = test_df.label
     
     def vec_engine(self, ngram_range, min_df = 2, lang='english', norm='l2', idf=True):
         # vectorize documents
@@ -103,9 +105,9 @@ class Model():
 
         # Evaluate the accuracy of the classifier
         accuracy = accuracy_score(self.test_Y, y_pred)
-        precision = precision_score(y_test, y_pred, pos_label='positive')
-        recall = recall_score(y_test, y_pred, pos_label='positive')
-        f1 = f1_score(y_test, y_pred, pos_label='positive')
+        precision = precision_score(y_test, y_pred, pos_label=1)
+        recall = recall_score(y_test, y_pred, pos_label=1)
+        f1 = f1_score(y_test, y_pred, pos_label=1)
 
         eval = {'Accuracy:':accuracy, 'Precision:':precision, 'Recall:':recall, 'F1 score:':f1}
         return pd.DataFrame(eval, orient='index', columns=['score'])
